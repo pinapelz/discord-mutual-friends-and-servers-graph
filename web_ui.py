@@ -124,7 +124,7 @@ def create_app(users_to_servers):
         selected_id = clicked_node_data["id"]
         selected_group = clicked_node_data["group"]
 
-        # Find connected nodes
+        # Find   nodes
         connected_nodes = set()
         connected_edges = set()
 
@@ -237,7 +237,7 @@ def create_app(users_to_servers):
                     "fontSize": "1.125rem",
                     "fontWeight": "600",
                 }),
-                html.P(f"Connected to {total_servers} servers through {total_users} users",
+                html.P(f"Connected to {total_servers} users through {total_users} servers",
                       style={"margin": "0 0 0.75rem 0", "color": "#f9fafb", "fontSize": "0.875rem"}),
                 html.P("Your network reach in Discord",
                       style={"margin": "0", "color": "#9ca3af", "fontSize": "0.875rem", "fontStyle": "italic"}),
