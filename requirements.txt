@@ -2,3 +2,6 @@ discord.py-self@git+https://github.com/dolfies/discord.py-self
 python-dotenv
 selenium
 tk
+dash
+dash_cytoscape
+Requests
