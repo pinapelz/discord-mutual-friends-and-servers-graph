@@ -246,9 +246,9 @@ def create_app(users_to_servers):
 
     return app
 
-def run_web_server(users_to_servers):
+def run_web_server(users_to_servers, debug=False):
     app = create_app(users_to_servers)
-    app.run(debug=True, host="0.0.0.0", port=8050)
+    app.run(debug=debug, host="0.0.0.0", port=8050)
 
 if __name__ == "__main__":
     import json
@@ -261,4 +261,4 @@ if __name__ == "__main__":
     with open(json_file, 'r') as f:
         mutual_servers = json.load(f)
     users_to_servers = remap_servers_to_adjacency_matrix(mutual_servers)
-    run_web_server(users_to_servers)
+    run_web_server(users_to_servers, debug=False)
