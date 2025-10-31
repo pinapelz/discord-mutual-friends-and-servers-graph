@@ -2,9 +2,10 @@ import argparse
 import json
 import logging
 import os
-from time import sleep
 import sys
 import asyncio
+import requests
+import web_ui
 
 import discord
 from dotenv import load_dotenv
@@ -20,6 +21,20 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+def get_user_guilds_fast(token):
+    url = "https://discord.com/api/v9/users/@me/guilds"
+    headers = {
+        "Authorization": token,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "X-Debug-Options": "bugReporterEnabled",
+        "X-Discord-Locale": "en-US",
+        "X-Discord-Timezone": "America/Vancouver"
+    }
+    response = requests.get(url, headers=headers)
+    raw_server_list = response.json()
+    server_list = [(server["name"], server["id"]) for server in raw_server_list]
+    return server_list
+
 
 class MyClient(discord.Client):
     def __init__(
@@ -34,6 +49,7 @@ class MyClient(discord.Client):
         max_members,
         period_max_members,
         pause_duration,
+        show_mutual_server_graph
     ):
         super().__init__()
         self.sleep_time = sleep_time
@@ -46,6 +62,7 @@ class MyClient(discord.Client):
         self.max_members = max_members
         self.period_max_members = period_max_members
         self.pause_duration = pause_duration
+        self.show_mutual_server_graph = show_mutual_server_graph
         print("MyClient initialized successfully")
 
     async def on_ready(self) -> None:
@@ -72,7 +89,17 @@ class MyClient(discord.Client):
                 server_info, friends, mutual_friends, mutual_servers, self.output_path
             )
 
-        await self.close()
+        if self.show_mutual_server_graph:
+            print("\nLaunching web UI dashboard...")
+            print("Web server will start at http://localhost:8050")
+            await self.close()  # Close Discord client first
+            users_to_servers = web_ui.remap_servers_to_adjacency_matrix(server_info)
+            try:
+                web_ui.run_web_server(users_to_servers)
+            except KeyboardInterrupt:
+                print("\nWeb server stopped.")
+        else:
+            await self.close()
 
     def get_friend_ids(self, client: discord.Client) -> set:
         friend_ids = set()
@@ -480,6 +507,23 @@ def add_arguments(parser: argparse.ArgumentParser, output_path=str):
         help="Pause duration between periods in seconds. Example --pause_duration 300, default=300",
     )
 
+    parser.add_argument(
+        "--list_servers",
+        action="store_true",
+        help="Lists all the servers and guilds you are a part of"
+    )
+    parser.add_argument(
+        "--mutual_server_graph",
+        action="store_true",
+        help="Launch interactive web UI dashboard at http://localhost:8050 after data collection"
+    )
+    parser.add_argument(
+        "--web_ui_only",
+        type=str,
+        metavar="JSON_FILE",
+        help="Launch web UI directly from a previously saved JSON file (skips Discord data collection)"
+    )
+
 
 if __name__ == "__main__":
     # Set the default output path to the current working directory + /output/
@@ -500,6 +544,34 @@ if __name__ == "__main__":
     load_dotenv(verbose=True)
     token = os.getenv(key)
 
+    if args.list_servers:
+        sever_tuples = get_user_guilds_fast(token)
+        idx = 1
+        for server_name, guild_id in sever_tuples:
+            print(f"{idx}. {server_name} [{guild_id}]")
+            idx+=1
+        exit(0)
+
+    # If web-ui-only mode, launch the web UI directly with existing JSON data
+    if hasattr(args, 'web_ui_only') and args.web_ui_only:
+        if not os.path.exists(args.web_ui_only):
+            print(f"Error: JSON file '{args.web_ui_only}' not found!")
+            exit(1)
+
+        print(f"Loading data from {args.web_ui_only}...")
+        with open(args.web_ui_only, 'r') as f:
+            mutual_servers = json.load(f)
+
+        users_to_servers = web_ui.remap_servers_to_adjacency_matrix(mutual_servers)
+        print("Starting web UI at http://localhost:8050")
+        print("Press Ctrl+C to stop the server")
+
+        try:
+            web_ui.run_web_server(users_to_servers)
+        except KeyboardInterrupt:
+            print("\nWeb server stopped.")
+        exit(0)
+
     client = MyClient(
         sleep_time=args.sleep_time,
         output_verbosity=args.output_verbosity,
@@ -511,5 +583,6 @@ if __name__ == "__main__":
         max_members=args.max_members,
         period_max_members=args.period_max_members,
         pause_duration=args.pause_duration,
+        show_mutual_server_graph=args.mutual_server_graph
     )
     client.run(token)

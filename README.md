@@ -1,5 +1,7 @@
 # Discord Mutual Friends and Servers
 
+> This fork contains a webui for viewing mutual servers via a bipartite graph
+
 This is a simple Discord bot that allows you to gather a list of server members who are your friends, along with those you share mutual servers or mutual friends with.
 
 **Note:**
