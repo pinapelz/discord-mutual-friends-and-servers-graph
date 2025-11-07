@@ -1,6 +1,7 @@
 # Discord Mutual Friends and Servers
 
-> This fork contains a webui for viewing mutual servers via a bipartite graph
+> This fork contains a webui for viewing mutual servers via an interactive bipartite graph using Plotly Dash.
+<img width="1817" height="1012" alt="image" src="https://github.com/user-attachments/assets/10a924e8-6e0d-4e48-acc0-39fd0bf1c4cb" />
 
 This is a simple Discord bot that allows you to gather a list of server members who are your friends, along with those you share mutual servers or mutual friends with.
 
